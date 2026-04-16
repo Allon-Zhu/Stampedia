@@ -2879,7 +2879,7 @@ function handleMessageComposerKeydown(event) {
 async function generateFriendReply(friendId) {
   const profile = getFriendProfileById(friendId);
   const fallback = fallbackFriendReply(friendId);
-  if (!profile || !OPENAI_API_KEY || OPENAI_API_KEY.length < 20) return fallback;
+  if (!profile) return fallback;
 
   const recentConversation = getConversation(friendId)
     .slice(-6)
@@ -2892,52 +2892,19 @@ async function generateFriendReply(friendId) {
     .join('; ') || 'No active review queue surfaced right now.';
 
   const reviewedCount = getReviewedStayIdsForApp().size;
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + OPENAI_API_KEY
-      },
-      signal: controller ? controller.signal : undefined,
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        temperature: 0.9,
-        messages: [
-          {
-            role: 'system',
-            content: `You are roleplaying ${profile.name} in a travel social app. Background: ${profile.intro} Home base: ${profile.home}. Travel focus: ${profile.focus}. You are texting your friend Jamie L. Reply like a real friend in a text thread. Never mention being AI, ChatGPT, OpenAI, a model, or that this is a simulation. Keep the reply warm, specific, and concise. Use at most 2 short text-message style sentences and under 55 words.`
-          },
-          {
-            role: 'user',
-            content: `Recent conversation:\n${recentConversation || 'Jamie just opened the thread.'}\n\nJamie's current verified-stay review queue: ${pendingReviews}\nJamie has already completed ${reviewedCount} verified stay reviews in this demo.\n\nWrite the next reply from ${profile.name}. Only return the text Jamie would see in the chat bubble.`
-          }
-        ]
-      })
-    });
+    const data = await callOpenAIBackend('friendReply', {
+      profile,
+      recentConversation,
+      pendingReviews,
+      reviewedCount
+    }, 12000);
 
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`OpenAI ${response.status}: ${body}`);
-    }
-
-    const data = await response.json();
-    const rawContent = data.choices && data.choices[0] && data.choices[0].message
-      ? data.choices[0].message.content
-      : '';
-    const content = Array.isArray(rawContent)
-      ? rawContent.map(part => part.text || '').join('')
-      : rawContent;
-
-    return normalizeFriendReply(content, fallback);
+    return normalizeFriendReply(data.content, fallback);
   } catch (err) {
     console.warn('Friend reply generation fell back to canned text:', err);
     return fallback;
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
@@ -4699,8 +4666,37 @@ loadPassportMediaState();
 // REVIEW SYSTEM
 // ═══════════════════════════════════════════════════════
 
-// ─── OpenAI API Key — insert your key here ───
-const OPENAI_API_KEY = '';
+const VERCEL_API_BASE = 'https://api-lemon-delta.vercel.app/api';
+
+async function callOpenAIBackend(task, payload, timeoutMs = 15000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  try {
+    const response = await fetch(`${VERCEL_API_BASE}/openai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller ? controller.signal : undefined,
+      body: JSON.stringify({ task, payload })
+    });
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      const text = await response.text();
+      throw new Error(text || `Backend ${response.status}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || `Backend ${response.status}`);
+    }
+
+    return data;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 // ─── User Preference Profile (Jamie L. — inferred from historical reviews) ───
 // Higher = user cares more about this dimension
@@ -4902,7 +4898,6 @@ function localRankQuestions(stay, gaps) {
 
 async function rankQuestionsWithGPT(stay, gaps) {
   const local = localRankQuestions(stay, gaps);
-  if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 10) return local;
 
   const missingDims = Object.entries(gaps).filter(([,v]) => v === 0).map(([k]) => k);
   const prompt = `You are a hotel review quality analyst. A traveler just completed a verified stay and needs smart review questions.
@@ -4926,21 +4921,10 @@ Respond ONLY with valid JSON:
 {"rankedQuestions":[{"dimension":"...","score":9.2,"question":"...?","options":["...","...","...","..."]}]}`;
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        response_format: { type: 'json_object' },
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.35, max_tokens: 1400
-      })
-    });
-    if (!res.ok) throw new Error('API ' + res.status);
-    const data = await res.json();
-    const parsed = JSON.parse(data.choices[0].message.content);
+    const data = await callOpenAIBackend('rankQuestionsV1', { prompt }, 18000);
+    const parsed = JSON.parse(data.content);
+
     if (parsed.rankedQuestions && parsed.rankedQuestions.length >= 5) {
-      // Pad to 6 with local fallback if needed
       const result = parsed.rankedQuestions.slice(0, 5);
       if (local[5]) result.push(local[5]);
       return result;
@@ -4948,6 +4932,7 @@ Respond ONLY with valid JSON:
   } catch (e) {
     console.warn('GPT ranking failed, using local:', e.message);
   }
+
   return local;
 }
 
@@ -5305,12 +5290,6 @@ function stopVoice() {
 
 // ─── Boot ───
 function bootstrapReviewExperienceV2() {
-  const OPENAI_BROWSER_KEY = [
-    'sk-proj-cunQHC67DjVJ1Tj6G9UtODSiz66EULqYekI99B11KH4VRkW2',
-    'bVpVEncq6TdTOw5NJeOTBdwQojT3BlbkFJtlNFN_A4lhrNGRH_YgT-',
-    'JGBJmPNtJa6rJ9SpS-dw5d0CnVCOrU184OGFfqoCFg36PiBwriPeEA'
-  ].join('');
-  const OPENAI_MODEL_V2 = 'gpt-5.4-mini';
   const REVIEW_STORAGE_KEY_V2 = 'stampedia-review-state-v3';
   const QUESTION_COUNT_V2 = 5;
   const BASE_STAMP_COUNT_V2 = 14;
@@ -5865,54 +5844,14 @@ function bootstrapReviewExperienceV2() {
 
   async function rankQuestionsWithGPTV2(stay) {
     const localRanking = localRankQuestionsV2(stay);
-    if (!OPENAI_BROWSER_KEY || OPENAI_BROWSER_KEY.length < 20) {
-      return localRanking.slice(0, QUESTION_COUNT_V2);
-    }
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + OPENAI_BROWSER_KEY
-        },
-        body: JSON.stringify({
-          model: OPENAI_MODEL_V2,
-          temperature: 0.2,
-          messages: [
-            {
-              role: 'system',
-              content: 'You create adaptive post-stay hotel review questions that balance traveler preference fit with missing or stale hotel information. Output only valid JSON.'
-            },
-            {
-              role: 'user',
-              content: buildRankingPromptV2(stay, localRanking)
-            }
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'ranked_review_questions',
-              strict: true,
-              schema: questionSchemaV2
-            }
-          }
-        })
-      });
+      const data = await callOpenAIBackend('rankQuestionsV2', {
+        prompt: buildRankingPromptV2(stay, localRanking),
+        schema: questionSchemaV2
+      }, 18000);
 
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(`OpenAI ${response.status}: ${body}`);
-      }
-
-      const data = await response.json();
-      const rawContent = data.choices && data.choices[0] && data.choices[0].message
-        ? data.choices[0].message.content
-        : '';
-      const content = Array.isArray(rawContent)
-        ? rawContent.map(part => part.text || '').join('')
-        : rawContent;
-      const parsed = JSON.parse(content || '{}');
+      const parsed = JSON.parse(data.content || '{}');
       return normalizeRankedQuestionsV2(parsed.rankedQuestions, localRanking);
     } catch (err) {
       console.warn('OpenAI ranking failed, using local ranking:', err);

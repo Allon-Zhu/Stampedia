@@ -1,0 +1,6 @@
+metric,share
+Missing title,0.9268211368561426
+Missing review text,0.2902150358393065
+Under 20 words,0.5483795209018318
+Under 50 words,0.8360732738374824
+Contains non-ASCII text,0.18388914983560356

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stampedia | Adaptive Hotel Reviews</title>
+<link rel="stylesheet" href="review_demo.css" />
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="logo-row">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="8.4" stroke="white" stroke-width="1.4" />
+            <path d="M4 12H20" stroke="white" stroke-width="1.3" />
+            <path d="M12 3.6C14.2 5.8 15.5 8.8 15.5 12C15.5 15.2 14.2 18.2 12 20.4C9.8 18.2 8.5 15.2 8.5 12C8.5 8.8 9.8 5.8 12 3.6Z" stroke="white" stroke-width="1.3" />
+            <circle cx="17.6" cy="7.6" r="2.3" fill="#FF7A2F" />
+          </svg>
+        </div>
+        <div>
+          <div class="logo-title">Stampedia</div>
+          <div class="logo-subtitle">Adaptive travel passport</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-stack">
+      <button class="nav-item active" type="button">Feed</button>
+      <button class="nav-item" type="button">My Passport</button>
+      <button class="nav-item" type="button">Explore</button>
+      <button class="nav-item" type="button">Notifications <strong>3</strong></button>
+      <button class="nav-item" type="button">Review Queue</button>
+      <button class="nav-item" type="button">Sweepstakes</button>
+      <button class="nav-item" type="button">Milestones</button>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Hackathon logic live in the UI</h3>
+      <p>Each review starts from missing or stale property signals, blends in Jamie's hotel preferences, and turns the top-ranked follow-up into a low-friction prompt.</p>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Quiet-majority targeting</h3>
+      <p>Questions are biased toward the moderate and low-detail review gap described in the analysis pack, with sweepstakes entries as the lightweight nudge.</p>
+    </div>
+
+    <div class="user-card">
+      <div class="avatar">JL</div>
+      <div>
+        <div class="user-name">Jamie L.</div>
+        <div class="user-meta" id="sidebarStampCount">14 passport stamps</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="tab-strip">
+        <button class="tab-btn active" type="button">For You</button>
+        <button class="tab-btn" type="button">Following</button>
+        <button class="tab-btn" type="button">Verified Stays</button>
+      </div>
+      <div class="topbar-actions">
+        <button class="pill-btn" id="apiKeyButton" type="button">Add OpenAI key</button>
+        <input class="search-box" type="search" placeholder="Search hotels, cities, or review gaps" />
+      </div>
+    </header>
+
+    <div class="content-shell">
+      <main class="feed-column">
+        <section class="hero-card card">
+          <div class="eyebrow">Verified stay review rail</div>
+          <h1 class="hero-title">Leave smarter hotel reviews without leaving the home feed.</h1>
+          <p class="hero-copy">This demo keeps the current social homepage in view, opens a rounded modal instead of a new page, ranks follow-up questions against missing or stale signals, and gives one sweepstakes entry per answered prompt up to five total.</p>
+
+          <div class="hero-kpis">
+            <div class="kpi-chip">
+              <strong>4 live stays</strong>
+              <span>Ready for one-tap review entry</span>
+            </div>
+            <div class="kpi-chip">
+              <strong>5 max entries</strong>
+              <span>One sweepstakes entry per answered question</span>
+            </div>
+            <div class="kpi-chip">
+              <strong>ChatGPT tuned</strong>
+              <span>Reranks prompts and drafts a final review card when connected</span>
+            </div>
+          </div>
+
+          <div class="confirmation-banner" id="reviewConfirmationBanner" aria-live="polite">
+            <div class="confirmation-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 12.4L10.1 15.5L17.4 8.2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="9" stroke="white" stroke-width="1.4"/>
+              </svg>
+            </div>
+            <div class="confirmation-text" id="reviewConfirmationText"></div>
+          </div>
+
+          <div class="section-header">
+            <div>
+              <h2>Recently completed verified stays</h2>
+              <p>Each card shows a hotel placard, a review-gap score, and the one-review-per-confirmed-stay lock.</p>
+            </div>
+            <div class="section-badge" id="verifiedQueueCount">4 ready to review</div>
+          </div>
+          <div class="verified-stay-rail" id="verifiedStayRail"></div>
+        </section>
+
+        <section class="composer-card card">
+          <div class="composer-head">
+            <div class="avatar">JL</div>
+            <div class="composer-copy">
+              <h3>Review flow goals for this demo</h3>
+              <p>The modal defaults to a targeted question, still lets Jamie type or dictate a reply, and always keeps a traditional stars plus freeform review in the bottom-left corner for guests who prefer the classic flow.</p>
+            </div>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Adaptive question ranking</span>
+            <span class="chip">Popup stays in place</span>
+            <span class="chip">Live voice to text</span>
+            <span class="chip">One review per confirmed stay</span>
+            <span class="chip">Passport and sweepstakes updates</span>
+          </div>
+        </section>
+
+        <section class="generated-feed" id="generatedReviewFeed"></section>
+
+        <article class="post-card card">
+          <div class="post-head">
+            <div class="avatar avatar-blue">SR</div>
+            <div class="post-head-meta">
+              <strong>Sofia R.</strong>
+              <span>Barcelona, Spain | 2 hours ago</span>
+            </div>
+            <div class="post-stamp">Stamp #23</div>
+          </div>
+          <div class="post-hero"></div>
+          <div class="post-body">
+            <div class="post-review">
+              <strong>Hotel Arts Barcelona</strong>
+              <p>The infinity pool and beach access were the kind of details that make a stay feel instantly shareable. Staff was polished, the room felt fresh, and the location made it easy to switch from meetings to sunset walks without losing momentum.</p>
+              <div class="tag-row">
+                <span class="tag">Cleanliness</span>
+                <span class="tag">Pool</span>
+                <span class="tag">Location</span>
+                <span class="tag">Service</span>
+              </div>
+            </div>
+            <div class="post-actions">147 likes | 21 comments | Save for later</div>
+          </div>
+        </article>
+
+        <article class="post-card card">
+          <div class="post-head">
+            <div class="avatar avatar-green">KN</div>
+            <div class="post-head-meta">
+              <strong>Kenji N.</strong>
+              <span>Kyoto, Japan | 5 hours ago</span>
+            </div>
+            <div class="post-stamp">Stamp #41</div>
+          </div>
+          <div class="post-hero warm"></div>
+          <div class="post-body">
+            <div class="post-review">
+              <strong>Aman Kyoto</strong>
+              <p>The forest setting made the property feel private without becoming inconvenient. Service was warm without being performative, and the pace of the place made every detail feel more deliberate than a typical city luxury stay.</p>
+              <div class="tag-row">
+                <span class="tag">Quiet</span>
+                <span class="tag">Service</span>
+                <span class="tag">Design</span>
+              </div>
+            </div>
+            <div class="post-actions">93 likes | 14 comments | Save for later</div>
+          </div>
+        </article>
+      </main>
+
+      <aside class="insight-column">
+        <section class="panel-card card">
+          <h3 class="panel-title">Passport progress</h3>
+          <div class="stats-grid">
+            <div class="stat-tile">
+              <strong id="statStampCount">14</strong>
+              <span>Stamps</span>
+            </div>
+            <div class="stat-tile">
+              <strong id="statCountryCount">8</strong>
+              <span>Countries</span>
+            </div>
+            <div class="stat-tile">
+              <strong id="statFollowerCount">247</strong>
+              <span>Followers</span>
+            </div>
+          </div>
+          <div class="inline-note" id="passportStatusNote">One more reviewed stay unlocks the Europe Explorer milestone in the demo passport.</div>
+        </section>
+
+        <section class="panel-card card">
+          <h3 class="panel-title">Recent passport stamps</h3>
+          <div class="passport-grid" id="passportGrid"></div>
+        </section>
+
+        <section class="panel-card card">
+          <h3 class="panel-title">Sweepstakes loop</h3>
+          <div class="sweepstakes-box">
+            <strong id="sweepstakesEntryTotal">0 entries this session</strong>
+            <span>Each answered review question adds one entry, up to five per review. The demo uses the reward analysis framing for a weekly OneKeyCash sweepstakes without forcing a big guaranteed payout.</span>
+          </div>
+          <div class="mini-copy top-gap-sm">Current demo prize framing: 10 winners each week x $100 OneKeyCash.</div>
+        </section>
+
+        <section class="panel-card card">
+          <h3 class="panel-title">Question ranking formula</h3>
+          <div class="mini-copy">The first question is ranked numerically from property-level gap data plus Jamie's preferences.</div>
+          <div class="score-formula">
+            Composite score = 55% hotel opportunity score + 25% user preference fit + 20% stale-or-missing urgency.
+            <br />
+            If an OpenAI key is connected, ChatGPT reranks the candidates and refreshes the answer bubbles before Jamie responds.
+          </div>
+        </section>
+
+        <section class="panel-card card">
+          <h3 class="panel-title">Why these topics surface</h3>
+          <div class="milestone">
+            <strong>What the analysis said</strong>
+            <span>The review notebook focuses on missing or stale data, high-value under-covered topics like listing accuracy, Wi-Fi, check-in, value, and location, and low-friction follow-up questions that are worth asking first.</span>
+          </div>
+          <div class="milestone top-gap-sm">
+            <strong>What the reward model said</strong>
+            <span>Lightweight incentives work best when targeted at quiet-majority or low-detail reviewers. The sweepstakes mechanic in this demo keeps that nudge visible while staying simple enough for a hackathon pitch.</span>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="reviewModal" aria-hidden="true">
+  <div class="review-modal" role="dialog" aria-modal="true" aria-labelledby="modalHotelTitle">
+    <button class="modal-close" id="closeModalButton" type="button" aria-label="Close review modal">X</button>
+
+    <div class="modal-header">
+      <div>
+        <div class="eyebrow">Verified stay review</div>
+        <h2 id="modalHotelTitle">Hotel review</h2>
+        <p id="modalHotelMeta"></p>
+      </div>
+      <div class="modal-status">
+        <div class="status-box">
+          <span>Entries earned this review</span>
+          <strong id="modalEntryCounter">0 / 5</strong>
+        </div>
+        <div class="status-box">
+          <span>Review assistant</span>
+          <strong id="modalAiStatus">Local ranking</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="question-shell">
+      <section class="score-panel">
+        <div class="score-topline">
+          <div>
+            <span class="score-label">Top-ranked question score</span>
+            <strong id="modalQuestionScore">88.0</strong>
+          </div>
+          <div class="score-source" id="modalRankingSource">Ranking source: property gaps + user fit</div>
+        </div>
+
+        <div class="score-grid-3">
+          <div class="score-cell">
+            <span>Hotel opportunity</span>
+            <strong id="modalHotelGapScore">0</strong>
+          </div>
+          <div class="score-cell">
+            <span>User preference fit</span>
+            <strong id="modalPreferenceScore">0</strong>
+          </div>
+          <div class="score-cell">
+            <span>Stale or missing urgency</span>
+            <strong id="modalUrgencyScore">0</strong>
+          </div>
+        </div>
+
+        <div class="reason-strip" id="modalReasonStrip"></div>
+      </section>
+
+      <section class="question-card">
+        <div class="question-step" id="modalQuestionStep">Question 1 of 5</div>
+        <h3 id="modalQuestionText"></h3>
+        <p class="question-helper" id="modalQuestionHelper"></p>
+
+        <div class="option-row" id="modalOptionRow"></div>
+
+        <label class="field-label" for="questionResponseBox">Typed or dictated response</label>
+        <textarea class="response-box" id="questionResponseBox" placeholder="Type details here or use the microphone to dictate your answer."></textarea>
+
+        <div class="voice-row">
+          <button class="voice-btn" id="voiceButton" type="button">Start voice response</button>
+          <span class="voice-status" id="voiceStatus">Browser voice capture is idle.</span>
+        </div>
+
+        <div class="inline-note" id="modalQuestionReason"></div>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <section class="traditional-panel">
+        <h4>Traditional review</h4>
+        <p>For guests who want the classic flow, this stays pinned at the bottom-left of the popup with a star rating and an open text box.</p>
+
+        <div class="star-row" id="traditionalStarRow"></div>
+
+        <label class="field-label" for="traditionalReviewBox">Open-ended stay summary</label>
+        <textarea class="traditional-box" id="traditionalReviewBox" placeholder="Share anything else about the room, service, value, or surprises from the stay."></textarea>
+      </section>
+
+      <div class="modal-actions">
+        <button class="action-secondary" id="doneReviewButton" type="button">Done with review</button>
+        <button class="action-primary" id="continueButton" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="review_demo_data.js"></script>
+<script src="review_demo_app.js"></script>
+</body>
+</html>

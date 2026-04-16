@@ -1,0 +1,4 @@
+layer,annual_invites,affected_booking_base_share,sensitivity,framing
+Pilot,1000000,0.1,Base,Conservative initial launch; same scope as the current base model.
+Scaled rollout,10000000,0.6,Base,Broader rollout across more verified post-stay touchpoints and review surfaces.
+Company-wide upside,25000000,1.0,Optimistic,Expedia-wide upside view with broader review-surface impact and stronger review-to-booking conversion assumptions.

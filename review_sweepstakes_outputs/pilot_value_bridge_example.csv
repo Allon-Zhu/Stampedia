@@ -1,0 +1,10 @@
+step,formula,pilot_example
+1. Prize pool,annual_prize_face_value = weekly_payout x 52,"$33,800.00"
+2. EV per entry,expected_value_per_entry = annual_prize_face_value / total_entries,$0.18
+3. Guaranteed-equivalent reward,expected_value_per_completion x sweepstakes_salience_multiplier,$0.22
+4. Completion effect,baseline completion + saturation_lift(guaranteed equivalent reward),19.8%
+5. More reviews,completed_reviews - baseline_completed_reviews,"11,681"
+6. Better reviews,additional answered prompts / detail units,"72,642"
+7. Booking uplift,bps_more + bps_better,1.456 bps
+8. Incremental revenue,incremental gross bookings x Expedia B2C revenue margin,"$137,926.42"
+9. All-in net EBITDA,incremental EBITDA - sweepstakes cost - AI cost,"$18,207.23"

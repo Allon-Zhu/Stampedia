@@ -1,0 +1,7 @@
+field,value
+Selected model,gpt-4o-mini
+Calls per completed review,1.2
+Avg input tokens per call,2200
+Avg output tokens per call,450
+Estimated cost per ranking call,0.0006
+Rationale,Conservative estimate for one structured ranking call: system prompt + property context + local ranking + JSON schema + five-question JSON output.

@@ -1,7 +1,13 @@
 Assumption,Value
-Annual post-stay invites,1000000.0
-Entries cap per review,5.0
+Annual post-stay invites,1000000
+Entries cap per review,5
 Moderate-rating target share,0.3518919819969995
 B2C gross bookings base,83867000000.0
 B2C revenue margin,0.11296457486258003
 B2C adjusted EBITDA margin,0.033362347526440676
+Selected AI model for cost case,gpt-4o-mini
+Ranking calls per completed review,1.2
+Average input tokens per ranking call,2200
+Average output tokens per ranking call,450
+Estimated GPT cost per ranking call,0.0006
+"Estimated GPT cost per 1,000 ranking calls",0.6
